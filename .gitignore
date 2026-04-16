@@ -1,0 +1,32 @@
+# 环境配置
+.env
+
+# Telegram会话
+*.session
+*.session-journal
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# 数据库
+forwarded.db
+forwarded.db-journal
+
+# 日志
+*.log
+logs/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
