@@ -8,18 +8,27 @@ from forwarder import forward_message
 from parser import extract_product_name_from_button
 from matcher import find_product
 
-# 初始化
-print("🚀 消息转发机器人启动中...")
+async def init():
+    """初始化函数"""
+    # 初始化
+    print("🚀 消息转发机器人启动中...")
 
-# 验证配置
-if not Config.validate():
-    exit(1)
+    # 验证配置
+    if not Config.validate():
+        exit(1)
 
-print("✅ 配置验证通过")
+    print("✅ 配置验证通过")
 
-# 初始化Telegram客户端
-client = TelegramClient('session', Config.API_ID, Config.API_HASH)
-bot = Bot(Config.BOT_TOKEN)
+    # 初始化Telegram客户端
+    client = TelegramClient('session', Config.API_ID, Config.API_HASH)
+    bot = Bot(Config.BOT_TOKEN)
+    
+    return client, bot
+
+# 异步初始化
+loop = asyncio.new_event_loop()
+asyncio.set_event_loop(loop)
+client, bot = loop.run_until_complete(init())
 
 # 初始化数据库
 db = ForwardDatabase()
