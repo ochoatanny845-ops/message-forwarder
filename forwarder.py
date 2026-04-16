@@ -45,14 +45,13 @@ async def forward_message(bot, message, product_data=None):
             button_url = f"https://t.me/{Config.SHOPBOT_USERNAME}?start=shop"
             match_status = f"⚠️  匹配失败，降级 (+{Config.FALLBACK_PRICE_INCREASE})"
         
-        # 构造新消息文本
-        message_text = f"""🔔 用户购买商品
-
-📱 用户 ID: {order_data['user_id']}
-👑 购买商品: {order_data['product_name']}
-📊 购买数量: {order_data['quantity']}
-
-💰 商品单价: {new_price:.2f} USDT"""
+        # 直接复制原始消息文本，只替换价格
+        import re
+        message_text = re.sub(
+            r'(商品单价[：:]\s*)[\d.]+(\s*USDT)',
+            rf'\g<1>{new_price:.2f}\g<2>',
+            message.text  # 保留原始格式（包括动态Emoji）
+        )
         
         # 构造新按钮（文字完全复制，链接修改）
         new_button = InlineKeyboardButton(
@@ -66,6 +65,7 @@ async def forward_message(bot, message, product_data=None):
         await bot.send_message(
             chat_id=Config.TARGET_CHANNEL_ID,
             text=message_text,
+            parse_mode='HTML',  # 支持动态Emoji
             reply_markup=keyboard
         )
         
