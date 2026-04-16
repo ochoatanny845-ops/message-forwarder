@@ -1,9 +1,55 @@
 """消息转发核心逻辑模块"""
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
+from telethon.tl.types import MessageEntityCustomEmoji
 from parser import parse_order_message, extract_product_name_from_button
 from matcher import find_product
 from config import Config
 from datetime import datetime
+import re
+
+def entities_to_html(text, entities):
+    """
+    将Telethon的entities转换为HTML格式（支持动态Emoji）
+    
+    Args:
+        text: 消息文本
+        entities: Telethon的MessageEntity列表
+    
+    Returns:
+        str: HTML格式的文本
+    """
+    if not entities:
+        return text
+    
+    result = ""
+    last_offset = 0
+    
+    # 按offset排序
+    sorted_entities = sorted(entities, key=lambda e: e.offset)
+    
+    for entity in sorted_entities:
+        # 添加前面的普通文本（转义HTML字符）
+        plain_text = text[last_offset:entity.offset]
+        result += plain_text.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
+        
+        # 提取实体对应的文本
+        entity_text = text[entity.offset:entity.offset + entity.length]
+        
+        # 处理动态Emoji
+        if isinstance(entity, MessageEntityCustomEmoji):
+            result += f'<tg-emoji emoji-id="{entity.document_id}">{entity_text}</tg-emoji>'
+        else:
+            # 其他实体保持原样（也需要转义）
+            result += entity_text.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
+        
+        last_offset = entity.offset + entity.length
+    
+    # 添加剩余文本（转义HTML字符）
+    remaining_text = text[last_offset:]
+    result += remaining_text.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
+    
+    return result
+
 
 async def forward_message(bot, message, product_data=None):
     """
@@ -53,6 +99,9 @@ async def forward_message(bot, message, product_data=None):
             message.text  # 保留原始格式（包括动态Emoji）
         )
         
+        # 转换entities为HTML（保留动态Emoji）
+        message_html = entities_to_html(message_text, message.entities)
+        
         # 构造新按钮（文字完全复制，链接修改）
         new_button = InlineKeyboardButton(
             original_button.text,  # 按钮文字完全一样
@@ -64,14 +113,16 @@ async def forward_message(bot, message, product_data=None):
         # 发送到目标频道
         await bot.send_message(
             chat_id=Config.TARGET_CHANNEL_ID,
-            text=message_text,
+            text=message_html,  # 使用HTML格式
             parse_mode='HTML',  # 支持动态Emoji
             reply_markup=keyboard
         )
         
         # 记录日志
         timestamp = datetime.now().strftime("%H:%M:%S")
-        print(f"✅ [{timestamp}] 已转发: {order_data['product_name']}")
+        has_custom_emoji = any(isinstance(e, MessageEntityCustomEmoji) for e in (message.entities or []))
+        emoji_status = "✨ 动态Emoji" if has_custom_emoji else "📝 普通文本"
+        print(f"✅ [{timestamp}] 已转发: {order_data['product_name']} ({emoji_status})")
         print(f"   价格: {order_data['price']:.2f} → {new_price:.2f} USDT")
         print(f"   {match_status}")
         
