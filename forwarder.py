@@ -94,6 +94,16 @@ async def forward_message(bot, message, product_data=None):
         # ✅ 先转换entities为HTML（保留动态Emoji）
         message_html = entities_to_html(message.text, message.entities)
         
+        # 🐛 调试：打印HTML内容
+        print(f"   📋 原始文本前100字符: {message.text[:100]}")
+        print(f"   📋 HTML文本前200字符: {message_html[:200]}")
+        if message.entities:
+            print(f"   📋 Entities数量: {len(message.entities)}")
+            for i, e in enumerate(message.entities[:3]):  # 只打印前3个
+                print(f"      {i+1}. {type(e).__name__} offset={e.offset} len={e.length}")
+                if isinstance(e, MessageEntityCustomEmoji):
+                    print(f"         → document_id={e.document_id}")
+        
         # ✅ 再替换价格（在HTML文本中替换）
         message_html = re.sub(
             r'(商品单价[：:]\s*)[\d.]+(\s*USDT)',
