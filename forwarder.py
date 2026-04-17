@@ -91,16 +91,17 @@ async def forward_message(bot, message, product_data=None):
             return False
         
         # 确定价格和按钮
+        # ✅ 始终使用源价格 + 0.2
+        new_price = order_data['price'] + 0.2
+        
         if product_data:
-            # 匹配成功 - 使用ShopBot数据库价格
-            new_price = product_data['price']
+            # 匹配成功 - 使用ShopBot商品ID
             button_url = f"https://t.me/{Config.SHOPBOT_USERNAME}?start=buy_{product_data['id']}"
-            match_status = f"✅ 匹配成功 (ID: {product_data['id']})"
+            match_status = f"✅ 匹配成功 (ID: {product_data['id']}，价格: {order_data['price']:.2f} + 0.2 = {new_price:.2f})"
         else:
-            # 匹配失败 - 降级策略
-            new_price = order_data['price'] + Config.FALLBACK_PRICE_INCREASE
+            # 匹配失败 - 降级到主菜单
             button_url = f"https://t.me/{Config.SHOPBOT_USERNAME}?start=shop"
-            match_status = f"⚠️  匹配失败，降级 (+{Config.FALLBACK_PRICE_INCREASE})"
+            match_status = f"⚠️  匹配失败，降级到主菜单（价格: {order_data['price']:.2f} + 0.2 = {new_price:.2f}）"
         
         # ✅ 先转换entities为HTML（保留动态Emoji）
         message_html = entities_to_html(message.text, message.entities)

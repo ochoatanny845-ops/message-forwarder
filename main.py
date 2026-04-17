@@ -1,6 +1,6 @@
 """消息转发机器人 - 主程序"""
 from telethon import TelegramClient, events
-from telegram import Bot
+from telegram.ext import Application
 import asyncio
 from config import Config
 from database import ForwardDatabase
@@ -21,7 +21,10 @@ async def init():
 
     # 初始化Telegram客户端
     client = TelegramClient('session', Config.API_ID, Config.API_HASH)
-    bot = Bot(Config.BOT_TOKEN)
+    
+    # 使用Application获取异步Bot
+    application = Application.builder().token(Config.BOT_TOKEN).build()
+    bot = application.bot
     
     return client, bot
 
