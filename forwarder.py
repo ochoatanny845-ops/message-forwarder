@@ -100,6 +100,16 @@ async def forward_message(bot, message, product_data=None):
         )
         
         # 转换entities为HTML（保留动态Emoji）
+        # 调试：打印entities信息
+        if message.entities:
+            print(f"   📋 检测到 {len(message.entities)} 个entities:")
+            for i, entity in enumerate(message.entities):
+                print(f"      {i+1}. {type(entity).__name__} (offset={entity.offset}, length={entity.length})")
+                if isinstance(entity, MessageEntityCustomEmoji):
+                    print(f"         动态Emoji ID: {entity.document_id}")
+        else:
+            print(f"   ⚠️ message.entities 为空！")
+        
         message_html = entities_to_html(message_text, message.entities)
         
         # 构造新按钮（文字完全复制，链接修改）
