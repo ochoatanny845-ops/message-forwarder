@@ -32,7 +32,7 @@ def find_product(product_name, db_path):
         c = conn.cursor()
         
         # 构建查询
-        query = "SELECT id, name, price, stock FROM products WHERE 1=1"
+        query = "SELECT id, name, original_price, stock FROM products WHERE 1=1"
         params = []
         
         # 添加国家Emoji条件

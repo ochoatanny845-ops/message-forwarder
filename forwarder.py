@@ -91,26 +91,15 @@ async def forward_message(bot, message, product_data=None):
             button_url = f"https://t.me/{Config.SHOPBOT_USERNAME}?start=shop"
             match_status = f"⚠️  匹配失败，降级 (+{Config.FALLBACK_PRICE_INCREASE})"
         
-        # 直接复制原始消息文本，只替换价格
-        import re
-        message_text = re.sub(
+        # ✅ 先转换entities为HTML（保留动态Emoji）
+        message_html = entities_to_html(message.text, message.entities)
+        
+        # ✅ 再替换价格（在HTML文本中替换）
+        message_html = re.sub(
             r'(商品单价[：:]\s*)[\d.]+(\s*USDT)',
             rf'\g<1>{new_price:.2f}\g<2>',
-            message.text  # 保留原始格式（包括动态Emoji）
+            message_html
         )
-        
-        # 转换entities为HTML（保留动态Emoji）
-        # 调试：打印entities信息
-        if message.entities:
-            print(f"   📋 检测到 {len(message.entities)} 个entities:")
-            for i, entity in enumerate(message.entities):
-                print(f"      {i+1}. {type(entity).__name__} (offset={entity.offset}, length={entity.length})")
-                if isinstance(entity, MessageEntityCustomEmoji):
-                    print(f"         动态Emoji ID: {entity.document_id}")
-        else:
-            print(f"   ⚠️ message.entities 为空！")
-        
-        message_html = entities_to_html(message_text, message.entities)
         
         # 构造新按钮（文字完全复制，链接修改）
         new_button = InlineKeyboardButton(
