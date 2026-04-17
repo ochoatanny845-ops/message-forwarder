@@ -131,13 +131,20 @@ async def forward_message(bot, message, product_data=None):
         
         keyboard = InlineKeyboardMarkup([[new_button]])
         
+        # 🐛 调试：打印完整的HTML（替换价格后）
+        print(f"   📋 最终HTML（前300字符）:\n{message_html[:300]}")
+        print(f"   📋 parse_mode: HTML")
+        print(f"   📋 chat_id: {Config.TARGET_CHANNEL_ID}")
+        
         # 发送到目标频道
-        await bot.send_message(
+        result = await bot.send_message(
             chat_id=Config.TARGET_CHANNEL_ID,
             text=message_html,  # 使用HTML格式
             parse_mode='HTML',  # 支持动态Emoji
             reply_markup=keyboard
         )
+        
+        print(f"   📋 消息已发送，message_id: {result.message_id}")
         
         # 记录日志
         timestamp = datetime.now().strftime("%H:%M:%S")
