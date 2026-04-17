@@ -62,15 +62,14 @@ def entities_to_html(text, entities):
     return result
 
 
-async def forward_message(bot, message, product_data=None, client=None):
+async def forward_message(bot, message, product_data=None):
     """
     转发订单消息到目标频道
     
     Args:
-        bot: Telegram Bot实例（暂不使用）
+        bot: Telegram Bot实例
         message: 原始消息对象
         product_data: 匹配的商品数据（可选）
-        client: Telethon客户端（用于发送消息）
     
     Returns:
         bool: 转发是否成功
@@ -125,40 +124,30 @@ async def forward_message(bot, message, product_data=None, client=None):
         )
         
         # 构造新按钮（文字完全复制，链接修改）
-        from telethon.tl.types import KeyboardButtonUrl
+        from telegram import InlineKeyboardButton, InlineKeyboardMarkup
         
-        new_button_telethon = KeyboardButtonUrl(
-            text=original_button.text,  # 按钮文字完全一样
+        new_button = InlineKeyboardButton(
+            original_button.text,  # 按钮文字完全一样
             url=button_url  # 链接改成ShopBot
         )
         
+        keyboard = InlineKeyboardMarkup([[new_button]])
+        
         # 🐛 调试：打印完整的HTML（替换价格后）
         print(f"   📋 最终HTML（前300字符）:\n{message_html[:300]}")
-        print(f"   📋 parse_mode: html")
+        print(f"   📋 parse_mode: HTML")
         print(f"   📋 chat_id: {Config.TARGET_CHANNEL_ID}")
         
-        # ✅ 使用Telethon发送（保留动态Emoji）
-        if client:
-            result = await client.send_message(
-                entity=Config.TARGET_CHANNEL_ID,
-                message=message_html,
-                parse_mode='html',
-                buttons=[[new_button_telethon]]
-            )
-            print(f"   📋 消息已发送（Telethon），message_id: {result.id}")
-        else:
-            # 降级到Bot API
-            from telegram import InlineKeyboardButton, InlineKeyboardMarkup
-            new_button = InlineKeyboardButton(original_button.text, url=button_url)
-            keyboard = InlineKeyboardMarkup([[new_button]])
-            
-            result = await bot.send_message(
-                chat_id=Config.TARGET_CHANNEL_ID,
-                text=message_html,
-                parse_mode='HTML',
-                reply_markup=keyboard
-            )
-            print(f"   📋 消息已发送（Bot API），message_id: {result.message_id}")
+        # ✅ 使用Bot API发送（尝试禁用签名来测试）
+        result = await bot.send_message(
+            chat_id=Config.TARGET_CHANNEL_ID,
+            text=message_html,
+            parse_mode='HTML',
+            reply_markup=keyboard,
+            disable_web_page_preview=True  # 禁用链接预览
+        )
+        
+        print(f"   📋 消息已发送（Bot API），message_id: {result.message_id}")
         
         # 记录日志
         timestamp = datetime.now().strftime("%H:%M:%S")

@@ -67,8 +67,8 @@ async def handler(event):
     # 智能匹配ShopBot商品
     product_data = find_product(product_name, Config.SHOPBOT_DB_PATH)
     
-    # 转发消息（传递client）
-    success = await forward_message(bot, message, product_data, client=client)
+    # 转发消息
+    success = await forward_message(bot, message, product_data)
     
     # 标记已转发
     if success:
