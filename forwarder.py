@@ -21,6 +21,10 @@ def entities_to_html(text, entities):
     if not entities:
         return text
     
+    # ⚠️ Telegram的offset/length是按UTF-16编码计算的
+    # 需要将文本转换为UTF-16来正确处理
+    text_utf16 = text.encode('utf-16-le')
+    
     result = ""
     last_offset = 0
     
@@ -28,12 +32,18 @@ def entities_to_html(text, entities):
     sorted_entities = sorted(entities, key=lambda e: e.offset)
     
     for entity in sorted_entities:
-        # 添加前面的普通文本（转义HTML字符）
-        plain_text = text[last_offset:entity.offset]
+        # UTF-16偏移量（每个单位2字节）
+        start_byte = entity.offset * 2
+        end_byte = (entity.offset + entity.length) * 2
+        
+        # 提取前面的普通文本
+        plain_bytes = text_utf16[last_offset * 2:start_byte]
+        plain_text = plain_bytes.decode('utf-16-le', errors='ignore')
         result += plain_text.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
         
         # 提取实体对应的文本
-        entity_text = text[entity.offset:entity.offset + entity.length]
+        entity_bytes = text_utf16[start_byte:end_byte]
+        entity_text = entity_bytes.decode('utf-16-le', errors='ignore')
         
         # 处理动态Emoji
         if isinstance(entity, MessageEntityCustomEmoji):
@@ -45,7 +55,8 @@ def entities_to_html(text, entities):
         last_offset = entity.offset + entity.length
     
     # 添加剩余文本（转义HTML字符）
-    remaining_text = text[last_offset:]
+    remaining_bytes = text_utf16[last_offset * 2:]
+    remaining_text = remaining_bytes.decode('utf-16-le', errors='ignore')
     result += remaining_text.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
     
     return result
