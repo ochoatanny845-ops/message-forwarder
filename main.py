@@ -24,14 +24,15 @@ async def init():
     
     # 使用Application获取异步Bot
     application = Application.builder().token(Config.BOT_TOKEN).build()
+    await application.initialize()  # ← 初始化Application
     bot = application.bot
     
-    return client, bot
+    return client, bot, application  # ← 返回application
 
 # 异步初始化
 loop = asyncio.new_event_loop()
 asyncio.set_event_loop(loop)
-client, bot = loop.run_until_complete(init())
+client, bot, application = loop.run_until_complete(init())  # ← 接收application
 
 # 初始化数据库
 db = ForwardDatabase()
